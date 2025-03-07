@@ -372,12 +372,6 @@ with st.expander("Guide des expressions régulières"):
     ### Alternatives
     - `a|b` : a ou b
       * Exemple: `chat|chien` correspond à "chat" ou "chien"
-    
-    ### Exemples de regex courantes
-    - **Email (simplifié)**: `^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$`
-    - **Date (JJ-MM-AAAA)**: `^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(19|20)\\d{2}$`
-    - **Numéro de téléphone FR**: `^0[1-9]([ .-]?\\d{2}){4}$`
-    - **Code postal FR**: `^\\d{5}$`
     """)
 
 # Accordéon avec options du regex - placé tout en bas de la page
