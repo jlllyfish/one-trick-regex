@@ -3,11 +3,6 @@ import re
 import pandas as pd
 import requests
 import os
-from dotenv import load_dotenv
-
-# Chargement des variables d'environnement
-load_dotenv()
-LECHAT_API_KEY = os.getenv("LECHAT_API_KEY")
 
 # Accès au secret Streamlit
 LECHAT_API_KEY = st.secrets["LECHAT_API_KEY"]
