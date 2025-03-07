@@ -384,18 +384,6 @@ with st.expander("**Exemples d'expressions régulières courantes**"):
             "exemples_valides": ["01/2023", "12/2099", "05/2010"],
             "exemples_invalides": ["1/2023", "13/2023", "05/123", "05-2023", "05/1999"]
         },
-        "Email simple": {
-            "regex": r"^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$",
-            "description": "Valide une adresse email simple.",
-            "exemples_valides": ["exemple@domaine.com", "prenom.nom@entreprise.fr", "nom-compose@site.co.uk"],
-            "exemples_invalides": ["exemple@", "exemple@domaine", "@domaine.com", "exemple@domaine."]
-        },
-        "Numéro de téléphone FR": {
-            "regex": r"^0[1-9]([ .-]?\d{2}){4}$",
-            "description": "Valide un numéro de téléphone français.",
-            "exemples_valides": ["0123456789", "01 23 45 67 89", "01-23-45-67-89", "01.23.45.67.89"],
-            "exemples_invalides": ["00123456789", "0123", "+33123456789"]
-        }
     }
     
     for name, example in examples.items():
