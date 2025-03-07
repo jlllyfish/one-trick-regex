@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 load_dotenv()
 LECHAT_API_KEY = os.getenv("LECHAT_API_KEY")
 
+# Accès au secret Streamlit
+LECHAT_API_KEY = st.secrets["LECHAT_API_KEY"]
+
 # Fonction pour générer l'explication d'une expression régulière via l'API Mistral (Le Chat)
 def generer_explication_api(pattern, prompt=""):
     """Utilise l'API Mistral (Le Chat) pour générer une explication détaillée d'une expression régulière."""
