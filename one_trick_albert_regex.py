@@ -3,11 +3,9 @@ import re
 import pandas as pd
 import requests
 import os
-from dotenv import load_dotenv
 
-# Chargement des variables d'environnement
-load_dotenv()
-ALBERT_API_KEY = os.getenv("ALBERT_API_KEY")
+# Accès au secret Streamlit
+ALBERT_API_KEY = st.secrets["ALBERT_API_KEY"]
 
 # Fonction pour générer l'explication d'une expression régulière via l'API Albert
 def generer_explication_api(pattern, prompt=""):
