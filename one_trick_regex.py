@@ -1,54 +1,8 @@
 import streamlit as st
 import re
 import pandas as pd
-import requests
-import os
-from dotenv import load_dotenv
 
-# Chargement des variables d'environnement
-load_dotenv()
-LECHAT_API_KEY = os.getenv("LECHAT_API_KEY")
-
-# Fonction pour générer l'explication d'une expression régulière via l'API Mistral (Le Chat)
-def generer_explication_api(pattern, prompt=""):
-    """Utilise l'API Mistral (Le Chat) pour générer une explication détaillée d'une expression régulière."""
-    try:
-        # Construire le prompt pour l'API
-        if not prompt:
-            prompt = f"Explique en détail ce que fait cette expression régulière: {pattern}. Donne des exemples de textes qui correspondent et qui ne correspondent pas."
-        else:
-            prompt = f"{prompt} Expression régulière: {pattern}"
-        
-        # Appel à l'API Le Chat (Mistral)
-        headers = {
-            "Authorization": f"Bearer {LECHAT_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": "mistral-large-latest",  # Modèle Mistral à utiliser
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
-        }
-        
-        response = requests.post(
-            "https://api.mistral.ai/v1/chat/completions",
-            headers=headers,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result["choices"][0]["message"]["content"]
-        else:
-            st.error(f"Erreur API: {response.status_code} - {response.text}")
-            return f"Impossible de générer l'explication via l'API: {response.status_code}"
-    
-    except Exception as e:
-        return f"Erreur lors de la génération de l'explication: {str(e)}"
-
-# Fonction existante pour générer automatiquement la documentation d'une expression régulière
+# Fonction pour générer automatiquement la documentation d'une expression régulière
 def generer_documentation(pattern):
     """Analyse une expression régulière et génère une documentation explicative détaillée."""
     try:
@@ -136,6 +90,7 @@ def generer_documentation(pattern):
                 
             # Analyse plus détaillée des classes de caractères
             if '[' in pattern and ']' in pattern:
+                import re
                 # Analyser les classes de caractères complexes
                 classes = re.findall(r'\[(.*?)\]', pattern)
                 for classe in classes:
@@ -159,6 +114,7 @@ def generer_documentation(pattern):
             
             # Analyse des groupes et alternatives
             if '(' in pattern and ')' in pattern:
+                import re
                 # Trouver les groupes pour analyse
                 groupes = re.findall(r'\((.*?)\)', pattern)
                 if groupes:
@@ -198,117 +154,57 @@ def generer_documentation(pattern):
         return f"Impossible de générer la documentation automatiquement : {str(e)}\n\nVeuillez décrire manuellement ce que fait cette expression régulière."
 
 # Configuration de la page
-st.set_page_config(page_title="one trick Cat RegEx", page_icon="🐱", layout="wide")
+st.set_page_config(page_title="one trick RegEx", page_icon="🦄", layout="wide")
 
 # Titre principal de l'application
-st.title("One trick Cat RegEx")
+st.title("One trick RegEx")
 
 # Interface divisée en deux colonnes
 col1, col2 = st.columns([1, 1])
-
-# Vérifier si la clé API est configurée
-if not LECHAT_API_KEY:
-    st.warning("⚠️ Clé d'API Mistral (Le Chat) non configurée. Créez un fichier .env avec LECHAT_API_KEY=votre_clé_api")
 
 with col1:
     st.subheader("Créer votre expression régulière (RegEx)")
     
     # Zone de saisie du regex
     default_pattern = r"^\d{2}-\d{2}-\d{4}$"
+    # Utiliser la valeur de session_state si elle existe, sinon utiliser la valeur par défaut
     regex_pattern = st.text_input("Entrez votre expression régulière:", 
                               value=st.session_state.get('regex_pattern', default_pattern),
                               help=r"Exemple: ^\d{2}-\d{2}-\d{4}$ pour valider une date au format JJ-MM-AAAA")
-    
-    # Champ pour demander à l'IA de générer un regex
-    regex_prompt = st.text_area(
-        "Ou demandez à l'IA de générer une expression régulière:",
-        placeholder="Exemple: Je veux une regex qui valide un numéro de téléphone français au format 06 12 34 56 78",
-        height=80
-    )
-    
-    if st.button("Générer une expression régulière avec Mistral (IA)"):
-        if regex_prompt:
-            with st.spinner("Génération en cours via Mistral..."):
-                prompt = f"Génère une expression régulière pour: {regex_prompt}. Réponds UNIQUEMENT avec l'expression régulière, sans autre texte."
-                try:
-                    headers = {
-                        "Authorization": f"Bearer {LECHAT_API_KEY}",
-                        "Content-Type": "application/json"
-                    }
-                    
-                    payload = {
-                        "model": "mistral-large-latest",
-                        "messages": [
-                            {"role": "user", "content": prompt}
-                        ]
-                    }
-                    
-                    response = requests.post(
-                        "https://api.mistral.ai/v1/chat/completions",
-                        headers=headers,
-                        json=payload
-                    )
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        generated_regex = result["choices"][0]["message"]["content"]
-                        # Extraction du regex entre backticks si présents
-                        pattern_match = re.search(r'`(.*?)`', generated_regex)
-                        if pattern_match:
-                            generated_regex = pattern_match.group(1)
-                        elif re.search(r'[\^\$\[\]\(\)\{\}\.\*\+\?\\]', generated_regex):
-                            words = generated_regex.split()
-                            for word in words:
-                                if re.search(r'[\^\$\[\]\(\)\{\}\.\*\+\?\\]', word):
-                                    generated_regex = word
-                                    break
-                        
-                        st.session_state['regex_pattern'] = generated_regex
-                        # Réinitialiser le champ d'explication lors de la génération du regex
-                        st.session_state['documentation_generee'] = ""
-                        st.rerun()
-                    else:
-                        st.error(f"Erreur API: {response.status_code} - {response.text}")
-                except Exception as e:
-                    st.error(f"Erreur: {str(e)}")
-        else:
-            st.warning("Veuillez entrer un prompt pour générer une expression régulière.")
-    
+
+    # Description du regex
     st.subheader("Explication")
     
-    # Boutons pour générer l'explication
-    col_buttons1, col_buttons2 = st.columns(2)
-    with col_buttons1:
-        if st.button("Générer avec Mistral (IA)"):
-            with st.spinner("Génération en cours via Mistral..."):
-                doc_generee = generer_explication_api(regex_pattern)
-                st.session_state['documentation_generee'] = doc_generee
+    # Ajout d'un bouton pour générer la documentation automatiquement
+    if st.button("Générer une explication automatique"):
+        doc_generee = generer_documentation(regex_pattern)
+        st.session_state['documentation_generee'] = doc_generee
     
-    with col_buttons2:
-        if st.button("Générer localement"):
-            doc_generee = generer_documentation(regex_pattern)
-            st.session_state['documentation_generee'] = doc_generee
-    
+    # Utiliser la documentation générée si disponible, sinon utiliser la valeur par défaut
     documentation_defaut = "Cette expression régulière valide une date au format JJ-MM-AAAA.\n\nExemples valides :\n- 01-01-2023\n- 31-12-2022\n\nExemples invalides :\n- 1-1-2023 (les chiffres doivent être sur 2 positions)\n- 01/01/2023 (mauvais séparateur)"
     regex_description = st.text_area(
-        "Explication de l'expression régulière:", 
-        height=250,
+        "Décrivez ce que fait votre expression régulière:", 
+        height=150,
         value=st.session_state.get('documentation_generee', documentation_defaut)
     )
 
 with col2:
     st.subheader("Tester votre expression régulière")
     
+    # Zone de test avec plusieurs lignes
     test_strings = st.text_area(
         "Entrez des textes à tester (un par ligne):",
         height=150,
         value="01-01-2023\n31-12-2022\n1-1-2023\n01/01/2023\nABC"
     )
     
+    # Bouton pour tester
     test_button = st.button("Tester", type="primary")
     
+    # Tester le regex quand on clique sur le bouton
     if test_button:
         try:
+            # Récupérer les flags depuis les options en bas de page
             current_flags = 0
             if 'ignore_case' in st.session_state and st.session_state['ignore_case']:
                 current_flags |= re.IGNORECASE
@@ -319,13 +215,18 @@ with col2:
             if 'verbose' in st.session_state and st.session_state['verbose']:
                 current_flags |= re.VERBOSE
                 
+            # Compiler le regex avec les flags
             pattern = re.compile(regex_pattern, flags=current_flags)
+            
+            # Tester chaque ligne
             results = []
             for i, line in enumerate(test_strings.splitlines()):
-                if not line.strip():
+                if not line.strip():  # Ignorer les lignes vides
                     continue
                     
                 match = pattern.search(line)
+                
+                # Récupérer les groupes si disponibles
                 groups = match.groups() if match else None
                 group_dict = match.groupdict() if match else None
                 
@@ -338,8 +239,13 @@ with col2:
                     "Groupes nommés": str(group_dict) if group_dict and len(group_dict) > 0 else None
                 })
             
+            # Afficher les résultats dans un tableau
             if results:
+                # Configuration des styles pour le tableau
+                # Colorer les symboles ✓ en vert et ✗ en rouge
                 df = pd.DataFrame(results)
+                
+                # Formatter le tableau
                 def highlight_match(val):
                     if val == "✓":
                         return 'color: green; font-weight: bold'
@@ -347,9 +253,14 @@ with col2:
                         return 'color: red; font-weight: bold'
                     else:
                         return ''
+                
+                # Appliquer le style
                 styled_df = df.style.map(highlight_match, subset=['Correspond'])
+                
+                # Afficher le tableau avec style
                 st.dataframe(styled_df, use_container_width=True)
                 
+                # Résumé avec coloration
                 matches_count = sum(1 for r in results if r["Correspond"] == "✓")
                 if matches_count > 0:
                     st.success(f"{matches_count} correspondance(s) trouvée(s) sur {len(results)} ligne(s).")
@@ -361,8 +272,8 @@ with col2:
         except Exception as e:
             st.error(f"Erreur lors de l'exécution du regex: {str(e)}")
 
-
-# Expander séparé pour les exemples d'expressions régulières courantes
+# Section avec exemples courants
+st.markdown("---")
 with st.expander("**Exemples d'expressions régulières courantes**"):
     examples = {
         "Nom en majuscules": {
@@ -382,21 +293,10 @@ with st.expander("**Exemples d'expressions régulières courantes**"):
             "description": "Valide une date au format MM/AAAA pour le 21ème siècle (2000-2099).",
             "exemples_valides": ["01/2023", "12/2099", "05/2010"],
             "exemples_invalides": ["1/2023", "13/2023", "05/123", "05-2023", "05/1999"]
-        },
-        "Email simple": {
-            "regex": r"^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$",
-            "description": "Valide une adresse email simple.",
-            "exemples_valides": ["exemple@domaine.com", "prenom.nom@entreprise.fr", "nom-compose@site.co.uk"],
-            "exemples_invalides": ["exemple@", "exemple@domaine", "@domaine.com", "exemple@domaine."]
-        },
-        "Numéro de téléphone FR": {
-            "regex": r"^0[1-9]([ .-]?\d{2}){4}$",
-            "description": "Valide un numéro de téléphone français.",
-            "exemples_valides": ["0123456789", "01 23 45 67 89", "01-23-45-67-89", "01.23.45.67.89"],
-            "exemples_invalides": ["00123456789", "0123", "+33123456789"]
         }
     }
     
+    # Afficher chaque exemple
     for name, example in examples.items():
         st.subheader(name)
         st.code(example["regex"])
@@ -404,15 +304,17 @@ with st.expander("**Exemples d'expressions régulières courantes**"):
         st.write("**Exemples valides:** " + ", ".join(f"`{ex}`" for ex in example["exemples_valides"]))
         st.write("**Exemples invalides:** " + ", ".join(f"`{ex}`" for ex in example["exemples_invalides"]))
         
+        # Créer un bouton pour utiliser cet exemple
         if st.button(f"Utiliser cet exemple ({name})"):
             st.session_state['regex_pattern'] = example["regex"]
             st.rerun()
         
         st.markdown("---")
 
-# Afficher le guide des expressions régulières dans un expander séparé
+
+# Section explicative sur les expressions régulières
 with st.expander("Guide des expressions régulières"):
-    st.markdown(r"""
+    st.markdown("""
     ## Aide-mémoire sur les expressions régulières
     
     ### Métacaractères de base
@@ -436,7 +338,7 @@ with st.expander("Guide des expressions régulières"):
       * Exemple: `a{2,4}` correspond à "aa", "aaa", "aaaa" mais pas à "a" ou "aaaaa"
     """)
     
-    st.markdown(r"""
+    st.markdown("""
     ### Classes de caractères
     - `[abc]` : Un des caractères a, b ou c
       * Exemple: `[aeiou]` correspond à n'importe quelle voyelle
@@ -444,62 +346,67 @@ with st.expander("Guide des expressions régulières"):
       * Exemple: `[^0-9]` correspond à tout caractère qui n'est pas un chiffre
     - `[a-z]` : Tout caractère entre a et z
       * Exemple: `[a-z]` correspond à toute lettre minuscule de l'alphabet latin
-    - `\d` : Chiffre (`[0-9]`)
-      * Exemple: `\d{3}` correspond à trois chiffres comme "123", "456"
-    - `\D` : Non-chiffre (`[^0-9]`)
-      * Exemple: `\D+` correspond à une suite de caractères sans chiffres
-    - `\w` : Caractère de mot (`[a-zA-Z0-9_]`)
-      * Exemple: `\w+` correspond à un mot comme "exemple_123"
-    - `\W` : Non-caractère de mot
-      * Exemple: `\W` correspond à des caractères comme "!", "@", "#"
-    - `\s` : Espace blanc
-      * Exemple: `mot\ssuivant` correspond à "mot suivant"
-    - `\S` : Non-espace blanc
-      * Exemple: `\S+` correspond à une suite de caractères sans espaces
+    - `\\d` : Chiffre (`[0-9]`)
+      * Exemple: `\\d{3}` correspond à trois chiffres comme "123", "456"
+    - `\\D` : Non-chiffre (`[^0-9]`)
+      * Exemple: `\\D+` correspond à une suite de caractères sans chiffres
+    - `\\w` : Caractère de mot (`[a-zA-Z0-9_]`)
+      * Exemple: `\\w+` correspond à un mot comme "exemple_123"
+    - `\\W` : Non-caractère de mot
+      * Exemple: `\\W` correspond à des caractères comme "!", "@", "#"
+    - `\\s` : Espace blanc
+      * Exemple: `mot\\ssuivant` correspond à "mot suivant"
+    - `\\S` : Non-espace blanc
+      * Exemple: `\\S+` correspond à une suite de caractères sans espaces
     """)
     
-    st.markdown(r"""
+    st.markdown("""
     ### Groupes
     - `(...)` : Capture un groupe
-      * Exemple: `(\d{2})-(\d{2})-(\d{4})` capture jour, mois et année
+      * Exemple: `(\\d{2})-(\\d{2})-(\\d{4})` capture jour, mois et année
     - `(?:...)` : Groupe non capturant
-      * Exemple: `(?:https?://)?example\.com` groupe optionnel sans capture
+      * Exemple: `(?:https?://)?example\\.com` groupe optionnel sans capture
     - `(?P<name>...)` : Groupe nommé
-      * Exemple: `(?P<jour>\d{2})-(?P<mois>\d{2})-(?P<annee>\d{4})`
-    """)
+      * Exemple: `(?P<jour>\\d{2})-(?P<mois>\\d{2})-(?P<annee>\\d{4})`
     
-    st.markdown(r"""
     ### Alternatives
     - `a|b` : a ou b
       * Exemple: `chat|chien` correspond à "chat" ou "chien"
+    
+    ### Exemples de regex courantes
+    - **Email (simplifié)**: `^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$`
+    - **Date (JJ-MM-AAAA)**: `^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(19|20)\\d{2}$`
+    - **Numéro de téléphone FR**: `^0[1-9]([ .-]?\\d{2}){4}$`
+    - **Code postal FR**: `^\\d{5}$`
     """)
 
-
-# Expander séparé pour les options avancées
+# Accordéon avec options du regex - placé tout en bas de la page
+st.markdown("---")
 with st.expander("Options avancées"):
     st.write("Ces options modifient le comportement de l'expression régulière:")
     col_options1, col_options2 = st.columns(2)
     with col_options1:
         st.session_state['ignore_case'] = st.checkbox("Ignorer la casse (re.IGNORECASE)", 
-                                                       value=st.session_state.get('ignore_case', False))
+                                                   value=st.session_state.get('ignore_case', False))
         st.session_state['multiline'] = st.checkbox("Mode multiligne (re.MULTILINE)", 
-                                                     value=st.session_state.get('multiline', False))
+                                                 value=st.session_state.get('multiline', False))
     with col_options2:
         st.session_state['dotall'] = st.checkbox("Point correspond à tout (re.DOTALL)", 
-                                                  value=st.session_state.get('dotall', False))
+                                              value=st.session_state.get('dotall', False))
         st.session_state['verbose'] = st.checkbox("Mode verbose (re.VERBOSE)", 
-                                                   value=st.session_state.get('verbose', False))
+                                               value=st.session_state.get('verbose', False))
     
-    st.markdown(r"""
+    # Explication détaillée des options
+    st.markdown("""
     #### Détails des options
     
     - **Ignorer la casse** : Rend le regex insensible à la casse. Ex: `/abc/i` correspond à "ABC", "abc", "Abc", etc.
     - **Mode multiligne** : Fait que `^` et `$` correspondent au début/fin de chaque ligne, pas seulement au début/fin du texte.
-    - **Point correspond à tout** : Fait que le caractère `.` correspond également aux sauts de ligne `\n`.
+    - **Point correspond à tout** : Fait que le caractère `.` correspond également aux sauts de ligne `\\n`.
     - **Mode verbose** : Permet d'écrire des regex plus lisibles avec des espaces et commentaires ignorés.
     """)
 
-
+# Mise à jour de la variable de session
 if 'regex_pattern' in st.session_state:
     if st.session_state['regex_pattern'] != regex_pattern:
         st.session_state['regex_pattern'] = regex_pattern
