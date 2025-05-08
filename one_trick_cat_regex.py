@@ -198,6 +198,58 @@ def generer_documentation(pattern):
 # Configuration de la page
 st.set_page_config(page_title="one trick Cat RegEx", page_icon="🐱", layout="wide")
 
+# CSS pour le style
+st.markdown("""
+<style>
+/* Style général */
+.main {
+    background-color: #ffffff;
+    color: #1e1e1e;
+    font-family: Marianne, arial, sans-serif;
+}
+h1, h2, h3 {
+    color: #000091;
+}
+.stButton button {
+    background-color: #000091;
+    color: white;
+    border-radius: 4px;
+    border: none;
+    padding: 8px 16px;
+}
+.stButton button:hover {
+    background-color: #1212ff;
+}
+
+/* Style pour le pied de page */
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f5f5f5;
+    color: #666666;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 14px;
+    border-top: 1px solid #e0e0e0;
+    z-index: 999;
+}
+
+.footer img {
+    height: 22px;
+    vertical-align: middle;
+    margin: 0 4px;
+}
+
+.cc-icon {
+    height: 20px;
+    vertical-align: middle;
+    margin: 0 4px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Titre principal de l'application
 st.title("One trick Cat RegEx")
 
@@ -487,6 +539,18 @@ with st.expander("Options avancées"):
     - **Mode verbose** : Permet d'écrire des regex plus lisibles avec des espaces et commentaires ignorés.
     """)
 
+# Ajout d'un espacement pour éviter que le contenu soit caché par le pied de page fixe
+st.markdown("<div style='margin-bottom:60px;'></div>", unsafe_allow_html=True)
+
+# Pied de page avec copyright Creative Commons - style similaire au simulateur
+st.markdown("""
+<div class="footer">
+    © 2025 Creative Commons Attribution (CC BY) 
+    <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" class="cc-icon" alt="CC">
+    <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" class="cc-icon" alt="BY">
+    DRAAF Occitanie - Tous droits réservés
+</div>
+""", unsafe_allow_html=True)
 
 if 'regex_pattern' in st.session_state:
     if st.session_state['regex_pattern'] != regex_pattern:
