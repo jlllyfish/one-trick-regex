@@ -5,7 +5,7 @@ import requests
 import os
 
 # Accès au secret Streamlit
-LECHAT_API_KEY = st.secrets["LECHAT_API_KEY"]
+LECHAT_API_KEY = os.getenv("LECHAT_API_KEY")
 
 # Fonction pour générer l'explication d'une expression régulière via l'API Mistral (Le Chat)
 def generer_explication_api(pattern, prompt=""):
